@@ -1,5 +1,9 @@
 # Watch Room Server
 
+[![Docker Hub](https://img.shields.io/docker/v/cyc233/watch-room-server?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/cyc233/watch-room-server)
+[![Docker Pulls](https://img.shields.io/docker/pulls/cyc233/watch-room-server)](https://hub.docker.com/r/cyc233/watch-room-server)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 独立的观影室服务器，为部署在 Vercel 的 [MoonTVPlus](https://github.com/mtvpls/MoonTVPlus) 提供实时同步观影功能。
 
 ## 功能特性
@@ -71,7 +75,52 @@ npm start
 
 ## Docker 部署
 
-### 使用 Docker Compose（推荐）
+### 使用 Docker Hub 镜像（最简单）
+
+直接使用已发布的 Docker 镜像：
+
+```bash
+# 拉取镜像
+docker pull cyc233/watch-room-server:latest
+
+# 运行容器
+docker run -d \
+  --name watch-room-server \
+  --restart unless-stopped \
+  -p 3001:3001 \
+  -e AUTH_KEY=your-secret-key \
+  -e ALLOWED_ORIGINS=https://your-domain.com \
+  -e NODE_ENV=production \
+  cyc233/watch-room-server:latest
+```
+
+或使用 Docker Compose：
+
+```yaml
+version: '3.8'
+
+services:
+  watch-room-server:
+    image: cyc233/watch-room-server:latest
+    container_name: watch-room-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - AUTH_KEY=your-secret-key
+      - ALLOWED_ORIGINS=https://your-domain.com
+      - NODE_ENV=production
+```
+
+保存为 `docker-compose.yml`，然后运行：
+
+```bash
+docker-compose up -d
+```
+
+**Docker Hub 地址**: https://hub.docker.com/r/cyc233/watch-room-server
+
+### 使用 Docker Compose（从源码构建）
 
 1. 配置环境变量：
 

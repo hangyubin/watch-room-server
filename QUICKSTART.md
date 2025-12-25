@@ -58,19 +58,56 @@ fly secrets set ALLOWED_ORIGINS=https://your-domain.com
 fly deploy
 ```
 
-### 方案 3: Docker
+### 方案 3: Docker（推荐自建）
+
+**使用 Docker Hub 镜像（最简单）**：
 
 ```bash
-# 配置环境变量
-cp .env.example .env
-# 编辑 .env
+# 拉取镜像
+docker pull cyc233/watch-room-server:latest
 
-# 启动
-docker-compose up -d
+# 运行
+docker run -d \
+  --name watch-room-server \
+  --restart unless-stopped \
+  -p 3001:3001 \
+  -e AUTH_KEY=your-secret-key \
+  -e ALLOWED_ORIGINS=https://your-domain.com \
+  -e NODE_ENV=production \
+  cyc233/watch-room-server:latest
 
 # 查看日志
+docker logs -f watch-room-server
+```
+
+**或使用 Docker Compose**：
+
+创建 `docker-compose.yml`：
+
+```yaml
+version: '3.8'
+
+services:
+  watch-room-server:
+    image: cyc233/watch-room-server:latest
+    container_name: watch-room-server
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    environment:
+      - AUTH_KEY=your-secret-key
+      - ALLOWED_ORIGINS=https://your-domain.com
+      - NODE_ENV=production
+```
+
+然后运行：
+
+```bash
+docker-compose up -d
 docker-compose logs -f
 ```
+
+**Docker Hub**: https://hub.docker.com/r/cyc233/watch-room-server
 
 ### 方案 4: VPS
 
