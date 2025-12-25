@@ -1,6 +1,6 @@
 # Watch Room Server
 
-独立的观影室服务器，为部署在 Vercel 的 MoonTVPlus(https://github.com/mtvpls/MoonTVPlus) 提供实时同步观影功能。
+独立的观影室服务器，为部署在 Vercel 的 [MoonTVPlus](https://github.com/mtvpls/MoonTVPlus) 提供实时同步观影功能。
 
 ## 功能特性
 
