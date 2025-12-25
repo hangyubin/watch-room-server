@@ -65,27 +65,6 @@ WATCH_ROOM_EXTERNAL_SERVER_AUTH=your-secret-auth-key
 - `WATCH_ROOM_EXTERNAL_SERVER_AUTH` 必须与观影室服务器的 `AUTH_KEY` 完全一致
 - 设置后需要重新部署 Vercel 项目
 
-### 管理后台配置（可选）
-
-也可以在 MoonTVPlus 管理后台配置：
-
-1. 登录管理后台
-2. 进入"观影室设置"
-3. 启用观影室功能
-4. 选择"外部服务器"
-5. 填写：
-   - 服务器地址：`https://your-watch-room-server.com`
-   - 认证密钥：与服务器的 `AUTH_KEY` 相同
-6. 保存设置
-
-### 验证连接
-
-配置完成后，访问 MoonTVPlus：
-
-1. 创建观影室
-2. 如果连接成功，会显示房间信息
-3. 如果失败，查看浏览器控制台和服务器日志
-
 ## 本地开发
 
 ### 1. 安装依赖
