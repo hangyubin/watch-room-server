@@ -30,17 +30,51 @@
 
 ### 使用 Zeabur（一键部署）
 
-点击下方按钮即可一键部署到 Zeabur：
+#### 方法一：直接导入 GitHub 仓库
+
+1. 访问 Zeabur 控制台：https://zeabur.com
+2. 登录你的 Zeabur 账号
+3. 点击 "新建项目" 按钮
+4. 选择 "从 GitHub 导入"
+5. 搜索并选择 `hangyubin/watch-room-server` 仓库
+6. 选择 `main` 分支
+7. 点击 "导入" 按钮
+
+#### 方法二：使用部署按钮
 
 [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/import/github)
 
-部署完成后，需要在 Zeabur 控制台配置以下环境变量：
+### Zeabur 部署详细步骤
+
+1. **导入仓库后**，Zeabur 会自动检测项目类型
+2. **等待构建完成**：
+   - Zeabur 会自动运行 `npm install` 安装依赖
+   - 自动运行 `npm run build` 构建 TypeScript
+   - 自动运行 `npm start` 启动服务
+3. **配置环境变量**：
+   - 在 Zeabur 控制台中，进入项目详情页
+   - 点击 "环境变量" 标签页
+   - 添加以下环境变量：
 
 | 环境变量 | 描述 | 示例值 |
 |----------|------|--------|
 | `AUTH_KEY` | 认证密钥，必须与 MoonTVPlus 配置一致 | `your-secret-auth-key` |
 | `ALLOWED_ORIGINS` | 允许的跨域来源，逗号分隔 | `https://your-domain.com` |
 | `NODE_ENV` | 运行环境 | `production` |
+| `PORT` | 服务器端口 | `3001` |
+
+4. **查看部署状态**：
+   - 在 "服务" 标签页查看部署进度
+   - 点击服务名称查看详细日志
+
+5. **访问服务**：
+   - 部署完成后，Zeabur 会分配一个临时域名，如 `your-service.zeabur.app`
+   - 可在服务详情页查看访问链接
+
+6. **配置自定义域名（可选）**：
+   - 在服务详情页，点击 "域名" 标签页
+   - 添加你的自定义域名
+   - 按照提示配置 DNS 记录
 
 ### 使用 Docker（推荐）
 
@@ -224,9 +258,9 @@ docker run -d \
 1. 在 [Railway](https://railway.app) 创建新项目
 2. 连接 GitHub 仓库或上传代码
 3. 设置环境变量：
-    - `AUTH_KEY`: 你的认证密钥
-    - `ALLOWED_ORIGINS`: 你的前端域名
-    - `PORT`: 3001（Railway 会自动分配）
+   - `AUTH_KEY`: 你的认证密钥
+   - `ALLOWED_ORIGINS`: 你的前端域名
+   - `PORT`: 3001（Railway 会自动分配）
 4. Railway 会自动检测并部署
 
 ### Render 部署
@@ -234,8 +268,8 @@ docker run -d \
 1. 在 [Render](https://render.com) 创建新的 Web Service
 2. 连接 GitHub 仓库
 3. 配置：
-    - Build Command: `npm install && npm run build`
-    - Start Command: `npm start`
+   - Build Command: `npm install && npm run build`
+   - Start Command: `npm start`
 4. 设置环境变量（同上）
 5. 部署
 

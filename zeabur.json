@@ -8,7 +8,7 @@
       "name": "watch-room-server",
       "source": {
         "type": "github",
-        "repo": "tgs9915/watch-room-server",
+        "repo": "hangyubin/watch-room-server",
         "branch": "main"
       },
       "build": {
