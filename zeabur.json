@@ -1,0 +1,40 @@
+{
+  "project": {
+    "name": "watch-room-server",
+    "description": "独立的观影室服务器，为部署在 Vercel 的 MoonTVPlus 提供实时同步观影功能"
+  },
+  "services": [
+    {
+      "name": "watch-room-server",
+      "source": {
+        "type": "github",
+        "repo": "tgs9915/watch-room-server",
+        "branch": "main"
+      },
+      "build": {
+        "type": "nodejs",
+        "installCommand": "npm install",
+        "buildCommand": "npm run build",
+        "startCommand": "npm start"
+      },
+      "ports": [
+        {
+          "containerPort": 3001,
+          "public": true
+        }
+      ],
+      "env": {
+        "PORT": "3001",
+        "NODE_ENV": "production"
+      },
+      "envFrom": [],
+      "healthCheck": {
+        "path": "/health",
+        "port": 3001,
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3
+      }
+    }
+  ]
+}

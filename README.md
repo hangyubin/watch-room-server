@@ -2,6 +2,7 @@
 
 [![Docker Hub](https://img.shields.io/docker/v/cyc233/watch-room-server?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/cyc233/watch-room-server)
 [![Docker Pulls](https://img.shields.io/docker/pulls/cyc233/watch-room-server)](https://hub.docker.com/r/cyc233/watch-room-server)
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/Qp0Lq1)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 独立的观影室服务器，为部署在 Vercel 的 [MoonTVPlus](https://github.com/mtvpls/MoonTVPlus) 提供实时同步观影功能。
@@ -26,6 +27,20 @@
 - Docker
 
 ## 快速部署
+
+### 使用 Zeabur（一键部署）
+
+点击下方按钮即可一键部署到 Zeabur：
+
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/Qp0Lq1)
+
+部署完成后，需要在 Zeabur 控制台配置以下环境变量：
+
+| 环境变量 | 描述 | 示例值 |
+|----------|------|--------|
+| `AUTH_KEY` | 认证密钥，必须与 MoonTVPlus 配置一致 | `your-secret-auth-key` |
+| `ALLOWED_ORIGINS` | 允许的跨域来源，逗号分隔 | `https://your-domain.com` |
+| `NODE_ENV` | 运行环境 | `production` |
 
 ### 使用 Docker（推荐）
 
