@@ -2,7 +2,7 @@
 
 [![Docker Hub](https://img.shields.io/docker/v/cyc233/watch-room-server?label=Docker%20Hub&logo=docker)](https://hub.docker.com/r/cyc233/watch-room-server)
 [![Docker Pulls](https://img.shields.io/docker/pulls/cyc233/watch-room-server)](https://hub.docker.com/r/cyc233/watch-room-server)
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/Qp0Lq1)
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/import/github)
 [![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 独立的观影室服务器，为部署在 Vercel 的 [MoonTVPlus](https://github.com/mtvpls/MoonTVPlus) 提供实时同步观影功能。
@@ -32,7 +32,7 @@
 
 点击下方按钮即可一键部署到 Zeabur：
 
-[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/Qp0Lq1)
+[![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/import/github)
 
 部署完成后，需要在 Zeabur 控制台配置以下环境变量：
 
