@@ -28,22 +28,19 @@ export class WatchRoomServer {
   }
 
   private setupEventHandlers() {
-    this.io.on('connection', (socket: TypedSocket) => {
-      console.log(`[WatchRoom] Client connected: ${socket.id}`);
-
-      // 验证认证
+    // 使用中间件统一处理认证
+    this.io.use((socket, next) => {
       const auth = socket.handshake.auth as { token?: string };
-      console.log('[WatchRoom] Auth token from handshake:', auth.token);
-      console.log('[WatchRoom] Expected AUTH_KEY:', this.authKey);
-
       if (!auth.token || auth.token !== this.authKey) {
         console.log('[WatchRoom] ❌ Authentication failed, disconnecting client');
-        socket.emit('error', 'Unauthorized');
-        socket.disconnect(true);
-        return;
+        return next(new Error('Unauthorized'));
       }
-
       console.log('[WatchRoom] ✅ Authentication successful');
+      next();
+    });
+
+    this.io.on('connection', (socket: TypedSocket) => {
+      console.log(`[WatchRoom] Client connected: ${socket.id}`);
 
       // 创建房间
       socket.on('room:create', (data, callback) => {
@@ -153,67 +150,67 @@ export class WatchRoomServer {
 
       // 播放状态更新
       socket.on('play:update', (state) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
-        if (!roomInfo || !roomInfo.isOwner) return;
+        const roomInfo = this.getRoomInfo(socket);
+        if (!this.isRoomOwner(roomInfo)) return;
 
-        const room = this.rooms.get(roomInfo.roomId);
+        const room = this.rooms.get(roomInfo!.roomId);
         if (room) {
           room.currentState = state;
-          this.rooms.set(roomInfo.roomId, room);
-          socket.to(roomInfo.roomId).emit('play:update', state);
+          this.rooms.set(roomInfo!.roomId, room);
+          socket.to(roomInfo!.roomId).emit('play:update', state);
         }
       });
 
       // 播放进度跳转
       socket.on('play:seek', (currentTime) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
         socket.to(roomInfo.roomId).emit('play:seek', currentTime);
       });
 
       // 播放
       socket.on('play:play', () => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
         socket.to(roomInfo.roomId).emit('play:play');
       });
 
       // 暂停
       socket.on('play:pause', () => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
         socket.to(roomInfo.roomId).emit('play:pause');
       });
 
       // 切换视频/集数
       socket.on('play:change', (state) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
-        if (!roomInfo || !roomInfo.isOwner) return;
+        const roomInfo = this.getRoomInfo(socket);
+        if (!this.isRoomOwner(roomInfo)) return;
 
-        const room = this.rooms.get(roomInfo.roomId);
+        const room = this.rooms.get(roomInfo!.roomId);
         if (room) {
           room.currentState = state;
-          this.rooms.set(roomInfo.roomId, room);
-          socket.to(roomInfo.roomId).emit('play:change', state);
+          this.rooms.set(roomInfo!.roomId, room);
+          socket.to(roomInfo!.roomId).emit('play:change', state);
         }
       });
 
       // 切换直播频道
       socket.on('live:change', (state) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
-        if (!roomInfo || !roomInfo.isOwner) return;
+        const roomInfo = this.getRoomInfo(socket);
+        if (!this.isRoomOwner(roomInfo)) return;
 
-        const room = this.rooms.get(roomInfo.roomId);
+        const room = this.rooms.get(roomInfo!.roomId);
         if (room) {
           room.currentState = state;
-          this.rooms.set(roomInfo.roomId, room);
-          socket.to(roomInfo.roomId).emit('live:change', state);
+          this.rooms.set(roomInfo!.roomId, room);
+          socket.to(roomInfo!.roomId).emit('live:change', state);
         }
       });
 
       // 聊天消息
       socket.on('chat:message', (data) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
 
         const message: ChatMessage = {
@@ -230,7 +227,7 @@ export class WatchRoomServer {
 
       // WebRTC 信令
       socket.on('voice:offer', (data) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
 
         this.io.to(data.targetUserId).emit('voice:offer', {
@@ -240,7 +237,7 @@ export class WatchRoomServer {
       });
 
       socket.on('voice:answer', (data) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
 
         this.io.to(data.targetUserId).emit('voice:answer', {
@@ -250,7 +247,7 @@ export class WatchRoomServer {
       });
 
       socket.on('voice:ice', (data) => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
 
         this.io.to(data.targetUserId).emit('voice:ice', {
@@ -262,16 +259,14 @@ export class WatchRoomServer {
       // 清除房间播放状态
       socket.on('state:clear', (callback) => {
         console.log('[WatchRoom] Received state:clear from', socket.id);
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
 
         if (!roomInfo) {
-          console.log('[WatchRoom] No room info found for socket');
           if (callback) callback({ success: false, error: 'Not in a room' });
           return;
         }
 
-        if (!roomInfo.isOwner) {
-          console.log('[WatchRoom] User is not owner');
+        if (!this.isRoomOwner(roomInfo)) {
           if (callback) callback({ success: false, error: 'Not owner' });
           return;
         }
@@ -284,14 +279,13 @@ export class WatchRoomServer {
           socket.to(roomInfo.roomId).emit('state:cleared');
           if (callback) callback({ success: true });
         } else {
-          console.log('[WatchRoom] Room not found');
           if (callback) callback({ success: false, error: 'Room not found' });
         }
       });
 
       // 心跳
       socket.on('heartbeat', () => {
-        const roomInfo = this.socketToRoom.get(socket.id);
+        const roomInfo = this.getRoomInfo(socket);
         if (!roomInfo) return;
 
         const roomMembers = this.members.get(roomInfo.roomId);
@@ -301,7 +295,7 @@ export class WatchRoomServer {
           roomMembers?.set(roomInfo.userId, member);
         }
 
-        if (roomInfo.isOwner) {
+        if (this.isRoomOwner(roomInfo)) {
           const room = this.rooms.get(roomInfo.roomId);
           if (room) {
             room.lastOwnerHeartbeat = Date.now();
@@ -320,8 +314,21 @@ export class WatchRoomServer {
     });
   }
 
-  private handleLeaveRoom(socket: TypedSocket) {
+  private getRoomInfo(socket: TypedSocket) {
     const roomInfo = this.socketToRoom.get(socket.id);
+    if (!roomInfo) {
+      console.log('[WatchRoom] No room info found for socket');
+      return null;
+    }
+    return roomInfo;
+  }
+
+  private isRoomOwner(roomInfo: any) {
+    return roomInfo && roomInfo.isOwner;
+  }
+
+  private handleLeaveRoom(socket: TypedSocket) {
+    const roomInfo = this.getRoomInfo(socket);
     if (!roomInfo) return;
 
     const { roomId, userId, isOwner } = roomInfo;
@@ -364,6 +371,16 @@ export class WatchRoomServer {
       const deleteTimeout = 5 * 60 * 1000;
       const clearStateTimeout = 30 * 1000;
 
+      // 监控内存使用
+      if (process.memoryUsage) {
+        const memoryUsage = process.memoryUsage();
+        const rss = (memoryUsage.rss / 1024 / 1024).toFixed(2);
+        const heapUsed = (memoryUsage.heapUsed / 1024 / 1024).toFixed(2);
+        if (parseFloat(heapUsed) > 100) {
+          console.log(`[WatchRoom] Memory usage warning: RSS=${rss}MB, HeapUsed=${heapUsed}MB`);
+        }
+      }
+
       this.rooms.forEach((room, roomId) => {
         const timeSinceHeartbeat = now - room.lastOwnerHeartbeat;
 
@@ -379,7 +396,7 @@ export class WatchRoomServer {
           this.deleteRoom(roomId);
         }
       });
-    }, 10000);
+    }, 5000); // 缩短清理间隔到5秒
   }
 
   private generateRoomId(): string {

@@ -4,38 +4,49 @@ import { Server } from 'socket.io';
 import cors from 'cors';
 import helmet from 'helmet';
 import compression from 'compression';
-import dotenv from 'dotenv';
 import { WatchRoomServer } from './watch-room-server.js';
-
-// 加载环境变量
-dotenv.config();
+import config, { validateConfig } from './config/index.js';
+import { apiLimiter, errorHandler, notFoundHandler } from './middleware/index.js';
 
 const app = express();
 const httpServer = createServer(app);
 
-// 配置
-const PORT = parseInt(process.env.PORT || '3001', 10);
-// 去除可能的引号和空格
-const AUTH_KEY = (process.env.AUTH_KEY || '').trim().replace(/^["']|["']$/g, '');
-const ALLOWED_ORIGINS = process.env.ALLOWED_ORIGINS?.split(',').map(o => o.trim()) || ['*'];
-const NODE_ENV = process.env.NODE_ENV || 'development';
+// 验证配置
+validateConfig();
 
-// 验证必需的环境变量
-if (!AUTH_KEY) {
-  console.error('Error: AUTH_KEY environment variable is required');
-  process.exit(1);
-}
+const { PORT, AUTH_KEY, ALLOWED_ORIGINS, NODE_ENV } = config;
 
 // 中间件
 app.use(compression());
 app.use(helmet({
   crossOriginResourcePolicy: { policy: 'cross-origin' },
+  crossOriginEmbedderPolicy: { policy: 'require-corp' },
+  crossOriginOpenerPolicy: { policy: 'same-origin' },
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'"],
+      imgSrc: ["'self'", "data:", "https:"],
+      connectSrc: ["'self'", ...ALLOWED_ORIGINS.map(origin => origin)],
+    }
+  }
 }));
 app.use(cors({
-  origin: ALLOWED_ORIGINS,
+  origin: (origin, callback) => {
+    if (!origin || ALLOWED_ORIGINS.includes('*') || ALLOWED_ORIGINS.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 app.use(express.json());
+app.use('/api/', apiLimiter);
+app.use('/stats', apiLimiter);
 
 // 健康检查端点
 app.get('/health', (_req, res) => {
@@ -71,6 +82,12 @@ app.get('/', (_req, res) => {
   });
 });
 
+// 404 处理
+app.use(notFoundHandler);
+
+// 全局错误处理中间件
+app.use(errorHandler);
+
 // Socket.IO 配置
 const io = new Server(httpServer, {
   cors: {
@@ -78,9 +95,10 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  transports: ['websocket', 'polling'],
-  pingTimeout: 60000,
-  pingInterval: 25000,
+  transports: ['websocket'],
+  maxHttpBufferSize: 1e6, // 1MB 消息大小限制
+  pingTimeout: 45000,
+  pingInterval: 20000,
 });
 
 // 初始化观影室服务器
@@ -96,7 +114,6 @@ httpServer.listen(PORT, () => {
   console.log(`Auth Key (first 8 chars): ${AUTH_KEY.substring(0, 8)}...`);
   console.log(`Auth Key (last 8 chars): ...${AUTH_KEY.substring(AUTH_KEY.length - 8)}`);
   console.log(`Auth Key Length: ${AUTH_KEY.length}`);
-  console.log(`Full Auth Key (for debugging): ${AUTH_KEY}`);
   console.log(`Allowed Origins: ${ALLOWED_ORIGINS.join(', ')}`);
   console.log('='.repeat(60));
   console.log(`Health Check: http://localhost:${PORT}/health`);
