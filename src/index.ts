@@ -95,7 +95,7 @@ const io = new Server(httpServer, {
     methods: ['GET', 'POST'],
     credentials: true,
   },
-  transports: ['websocket'],
+  transports: ['websocket', 'polling'],
   maxHttpBufferSize: 1e6, // 1MB 消息大小限制
   pingTimeout: 45000,
   pingInterval: 20000,
